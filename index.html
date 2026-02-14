@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VVP 150 DSA Tracker</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎯 VVP 150 DSA Question Tracker</h1>
+            <div class="stats">
+                <div class="stat-card">
+                    <span class="stat-value" id="solvedCount">0</span>
+                    <span class="stat-label">Solved</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-value" id="totalCount">150</span>
+                    <span class="stat-label">Total</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-value" id="progressPercent">0%</span>
+                    <span class="stat-label">Progress</span>
+                </div>
+                <div class="stat-card clickable" onclick="showStreak()">
+                    <span class="stat-value" id="streakCount">0🔥</span>
+                    <span class="stat-label">Day Streak</span>
+                </div>
+                <div class="stat-card clickable" onclick="showWeakTopics()">
+                    <span class="stat-value" id="weakTopics">📊</span>
+                    <span class="stat-label">Weak Areas</span>
+                </div>
+            </div>
+        </header>
+
+        <div class="controls">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="🔍 Search by question name...">
+            </div>
+            <div class="filters">
+                <select id="topicFilter">
+                    <option value="">All Topics</option>
+                </select>
+                <select id="difficultyFilter">
+                    <option value="">All Difficulty</option>
+                    <option value="Easy">Easy</option>
+                    <option value="Medium">Medium</option>
+                    <option value="Hard">Hard</option>
+                </select>
+                <select id="patternFilter">
+                    <option value="">All Patterns</option>
+                </select>
+                <select id="companyFilter">
+                    <option value="">All Companies</option>
+                    <option value="TCS">TCS</option>
+                    <option value="Infosys">Infosys</option>
+                    <option value="Wipro">Wipro</option>
+                    <option value="L&T">L&T</option>
+                </select>
+                <button id="resetBtn">Reset</button>
+                <button id="revisionBtn" class="btn-special">📚 Revision List</button>
+                <button id="randomBtn" class="btn-special">🎲 Random</button>
+                <button id="interviewBtn" class="btn-special">🎯 Interview Mode</button>
+                <button id="exportBtn" class="btn-special">📄 Export Notes PDF</button>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="topics-sidebar" id="topicsSidebar"></div>
+            <div class="questions-container" id="questionsContainer"></div>
+        </div>
+    </div>
+
+    <div id="noteModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Add Note</h2>
+            <textarea id="noteText" placeholder="Write your notes here..."></textarea>
+            <button id="saveNote">Save Note</button>
+        </div>
+    </div>
+
+    <div id="interviewModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeInterviewModal()">&times;</span>
+            <h2 id="interviewModalTitle">🎯 Interview Mode</h2>
+            <p id="interviewModalDesc">Practice like a real interview! Timer starts when you click a question.</p>
+            <div id="interviewQuestion"></div>
+            <div id="timerDisplay" style="font-size: 2rem; color: #1a73e8; margin: 20px 0;"></div>
+            <div id="interviewButtons">
+                <button onclick="nextInterviewQuestion()">Next Question</button>
+                <button onclick="closeInterviewModal()">Exit</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="randomModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeRandomModal()">&times;</span>
+            <h2>🎲 Random Question</h2>
+            <div id="randomQuestion"></div>
+            <button onclick="closeRandomModal()">Close</button>
+        </div>
+    </div>
+
+    <div id="insightModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeInsightModal()">&times;</span>
+            <h2 id="insightTitle"></h2>
+            <div id="insightContent"></div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</body>
+</html>
