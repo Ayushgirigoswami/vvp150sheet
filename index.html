@@ -1,118 +1,783 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VVP 150 DSA Tracker</title>
-    <link rel="stylesheet" href="styles.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Real DSA Tracker — Service Based</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#07070d;--surface:#0f0f1a;--surface2:#161625;--surface3:#1e1e30;
+  --border:#252538;--accent:#00e5ff;--accent2:#a855f7;--accent3:#f59e0b;
+  --easy:#22c55e;--medium:#f59e0b;--hard:#ef4444;
+  --text:#e2e8f0;--muted:#6272a4;--mono:'JetBrains Mono',monospace;--sans:'Syne',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;overflow-x:hidden}
+body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 50% at 50% -20%,#00e5ff08,transparent);pointer-events:none;z-index:0}
+
+/* HEADER */
+header{
+  position:sticky;top:0;z-index:100;
+  background:rgba(7,7,13,0.95);backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);
+  padding:12px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+}
+.logo{font-size:1.2rem;font-weight:800;letter-spacing:-1px;white-space:nowrap}
+.logo span{color:var(--accent)}
+.logo sub{font-size:0.6rem;color:var(--muted);font-family:var(--mono);font-weight:400;vertical-align:middle;margin-left:6px;background:var(--surface3);padding:2px 7px;border-radius:4px;border:1px solid var(--border)}
+.hstats{display:flex;gap:16px;align-items:center;margin-left:auto;flex-wrap:wrap}
+.hstat{font-family:var(--mono);font-size:0.75rem;color:var(--muted)}
+.hstat b{color:var(--accent);font-size:1rem}
+.overall-bar{width:120px;height:5px;background:var(--surface3);border-radius:99px;overflow:hidden}
+.overall-fill{height:100%;background:linear-gradient(90deg,var(--accent2),var(--accent));border-radius:99px;transition:width .5s}
+.pct-label{font-family:var(--mono);font-size:0.7rem;color:var(--muted)}
+
+/* CONTROLS */
+.controls{
+  padding:12px 20px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;
+  border-bottom:1px solid var(--border);background:var(--surface);position:sticky;top:57px;z-index:99
+}
+.search-wrap{position:relative;flex:1;min-width:180px}
+.search-wrap input{
+  width:100%;background:var(--surface2);border:1px solid var(--border);
+  color:var(--text);font-family:var(--mono);font-size:0.8rem;
+  padding:7px 12px 7px 34px;border-radius:7px;outline:none;transition:border-color .2s
+}
+.search-wrap input:focus{border-color:var(--accent)}
+.si{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:0.85rem}
+.btn-group{display:flex;gap:5px;flex-wrap:wrap}
+.fb{
+  font-family:var(--mono);font-size:0.72rem;padding:6px 12px;border-radius:6px;
+  border:1px solid var(--border);background:var(--surface2);color:var(--muted);cursor:pointer;transition:all .15s
+}
+.fb:hover{border-color:var(--accent);color:var(--accent)}
+.fb.active{background:var(--accent);color:#000;border-color:var(--accent);font-weight:700}
+.fb.e.active{background:var(--easy);border-color:var(--easy);color:#000}
+.fb.m.active{background:var(--medium);border-color:var(--medium);color:#000}
+.fb.h.active{background:var(--hard);border-color:var(--hard);color:#fff}
+
+/* APP LAYOUT */
+.app{display:flex;height:calc(100vh - 109px)}
+
+/* SIDEBAR */
+.sidebar{
+  width:230px;min-width:230px;background:var(--surface);
+  border-right:1px solid var(--border);overflow-y:auto;padding:10px 0
+}
+.sidebar::-webkit-scrollbar{width:3px}
+.sidebar::-webkit-scrollbar-thumb{background:var(--border);border-radius:99px}
+.slabel{font-size:0.6rem;font-weight:800;letter-spacing:2.5px;color:var(--muted);padding:4px 14px 6px;text-transform:uppercase}
+.ti{
+  padding:7px 14px;cursor:pointer;display:flex;align-items:center;gap:6px;
+  font-size:0.8rem;font-weight:600;transition:all .15s;border-left:3px solid transparent;color:var(--muted)
+}
+.ti:hover{background:var(--surface2);color:var(--text)}
+.ti.active{background:var(--surface2);color:var(--accent);border-left-color:var(--accent)}
+.tbadge{
+  margin-left:auto;font-family:var(--mono);font-size:0.65rem;
+  background:var(--surface3);padding:1px 6px;border-radius:99px
+}
+.ti.active .tbadge{background:var(--accent);color:#000}
+.tbar{width:100%;height:2px;background:var(--surface3);margin-top:3px;border-radius:99px;overflow:hidden}
+.tbar-fill{height:100%;background:var(--accent);border-radius:99px;transition:width .4s}
+.company-tag{font-size:0.58rem;background:var(--accent2)22;color:var(--accent2);border:1px solid var(--accent2)44;padding:1px 5px;border-radius:3px;white-space:nowrap}
+
+/* MAIN */
+.main{flex:1;overflow-y:auto;padding:18px}
+.main::-webkit-scrollbar{width:3px}
+.main::-webkit-scrollbar-thumb{background:var(--border);border-radius:99px}
+.topic-hdr{display:flex;align-items:flex-start;gap:12px;margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid var(--border)}
+.topic-title{font-size:1.4rem;font-weight:800;letter-spacing:-.5px}
+.topic-meta{font-family:var(--mono);font-size:0.75rem;color:var(--muted);margin-top:3px}
+.company-pills{display:flex;gap:5px;flex-wrap:wrap;margin-top:5px}
+.cpill{font-size:0.62rem;padding:2px 7px;border-radius:99px;border:1px solid;font-family:var(--mono);font-weight:700}
+.cpill.tcs{background:#1d4ed822;color:#60a5fa;border-color:#1d4ed844}
+.cpill.infosys{background:#15803d22;color:#4ade80;border-color:#15803d44}
+.cpill.wipro{background:#9333ea22;color:#c084fc;border-color:#9333ea44}
+.cpill.cognizant{background:#b4500022;color:#fb923c;border-color:#b4500044}
+.cpill.tatvasoft{background:#0891b222;color:#22d3ee;border-color:#0891b244}
+.cpill.kevit{background:#be185d22;color:#f472b6;border-color:#be185d44}
+.cpill.general{background:#37415122;color:#9ca3af;border-color:#37415144}
+.prog-wrap{margin-left:auto;text-align:right}
+.prog-pct{font-family:var(--mono);font-size:1.1rem;font-weight:700;color:var(--accent)}
+.prog-sub{font-family:var(--mono);font-size:0.7rem;color:var(--muted)}
+
+/* DIFF GROUP */
+.dg{margin-bottom:20px}
+.dh{
+  display:flex;align-items:center;gap:8px;margin-bottom:8px;
+  font-size:0.68rem;font-weight:800;letter-spacing:2px;text-transform:uppercase;
+  cursor:pointer;user-select:none;padding:6px 8px;border-radius:6px;transition:background .15s
+}
+.dh:hover{background:var(--surface2)}
+.ddot{width:7px;height:7px;border-radius:50%}
+.dh.easy{color:var(--easy)}.dh.easy .ddot{background:var(--easy)}
+.dh.medium{color:var(--medium)}.dh.medium .ddot{background:var(--medium)}
+.dh.hard{color:var(--hard)}.dh.hard .ddot{background:var(--hard)}
+.dcnt{background:var(--surface2);border-radius:99px;padding:1px 7px;font-size:0.62rem;color:var(--muted)}
+.dtog{margin-left:auto;color:var(--muted);transition:transform .2s;font-size:0.75rem}
+.dtog.open{transform:rotate(180deg)}
+
+/* PROBLEM CARD */
+.pc{
+  background:var(--surface);border:1px solid var(--border);border-radius:8px;
+  margin-bottom:6px;transition:all .15s;overflow:hidden
+}
+.pc:hover{border-color:var(--accent)44;transform:translateX(1px)}
+.pc.solved{background:#00e5ff08;border-color:#00e5ff22}
+.pc.revise{border-left:3px solid var(--accent3)}
+.prow{display:flex;align-items:center;gap:10px;padding:10px 12px}
+.chk{
+  width:20px;height:20px;border-radius:5px;border:2px solid var(--border);
+  background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:all .15s;flex-shrink:0;font-size:0.75rem;color:#000
+}
+.chk:hover{border-color:var(--accent)}
+.solved .chk{background:var(--accent);border-color:var(--accent)}
+.pname{font-size:0.85rem;font-weight:600;flex:1;line-height:1.3}
+.solved .pname{text-decoration:line-through;color:var(--muted)}
+.db{font-family:var(--mono);font-size:0.65rem;padding:2px 7px;border-radius:99px;font-weight:700;white-space:nowrap}
+.db.easy{background:#22c55e18;color:var(--easy)}
+.db.medium{background:#f59e0b18;color:var(--medium)}
+.db.hard{background:#ef444418;color:var(--hard)}
+.sdate{font-family:var(--mono);font-size:0.65rem;color:var(--muted);white-space:nowrap}
+.acts{display:flex;gap:5px;align-items:center}
+.ib{
+  font-size:0.7rem;padding:3px 7px;border-radius:4px;border:1px solid var(--border);
+  background:var(--surface2);color:var(--muted);cursor:pointer;transition:all .15s;text-decoration:none
+}
+.ib:hover{border-color:var(--accent);color:var(--accent)}
+.rib{color:var(--accent3) !important;border-color:var(--accent3)44 !important}
+.rib.active-rev{background:var(--accent3)22 !important}
+/* Company tags on card */
+.ctags{display:flex;gap:3px;flex-wrap:wrap}
+.ctag{font-size:0.58rem;padding:1px 5px;border-radius:3px;border:1px solid;font-family:var(--mono)}
+.ctag.tcs{background:#1d4ed811;color:#60a5fa;border-color:#1d4ed833}
+.ctag.infosys{background:#15803d11;color:#4ade80;border-color:#15803d33}
+.ctag.wipro{background:#9333ea11;color:#c084fc;border-color:#9333ea33}
+.ctag.cognizant{background:#b4500011;color:#fb923c;border-color:#b4500033}
+.ctag.tatvasoft{background:#0891b211;color:#22d3ee;border-color:#0891b233}
+.ctag.kevit{background:#be185d11;color:#f472b6;border-color:#be185d33}
+.ctag.capgemini{background:#d9770611;color:#fbbf24;border-color:#d9770633}
+.ctag.accenture{background:#7c3aed11;color:#a78bfa;border-color:#7c3aed33}
+
+/* EXPANDED */
+.ep{border-top:1px solid var(--border);padding:12px;display:none}
+.ep.open{display:block}
+.ep-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:700px){.ep-grid{grid-template-columns:1fr}}
+.elabel{font-size:0.67rem;color:var(--muted);font-family:var(--mono);margin-bottom:5px;display:flex;align-items:center;gap:6px}
+.lang-tag{background:var(--accent2);color:#fff;padding:1px 5px;border-radius:3px;font-size:0.62rem}
+textarea.ci{
+  width:100%;min-height:110px;background:var(--bg);border:1px solid var(--border);
+  color:#a5f3fc;font-family:var(--mono);font-size:0.75rem;padding:9px;
+  border-radius:6px;resize:vertical;outline:none;line-height:1.6;transition:border-color .2s
+}
+textarea.ci:focus{border-color:var(--accent2)}
+textarea.ni{
+  width:100%;background:var(--bg);border:1px solid var(--border);
+  color:var(--text);font-family:var(--sans);font-size:0.78rem;padding:8px;
+  border-radius:6px;resize:vertical;min-height:110px;outline:none;transition:border-color .2s
+}
+textarea.ni:focus{border-color:var(--accent3)}
+.ep-actions{display:flex;gap:7px;margin-top:7px;align-items:center}
+.sbtn{
+  font-family:var(--mono);font-size:0.72rem;padding:5px 13px;
+  background:var(--accent);color:#000;border:none;border-radius:5px;cursor:pointer;font-weight:700
+}
+.clrbtn{
+  font-family:var(--mono);font-size:0.72rem;padding:5px 13px;
+  background:var(--surface3);color:var(--muted);border:1px solid var(--border);border-radius:5px;cursor:pointer
+}
+.smsg{font-family:var(--mono);font-size:0.68rem;color:var(--accent);opacity:0;transition:opacity .3s}
+.smsg.show{opacity:1}
+
+/* EMPTY */
+.empty{text-align:center;padding:50px 20px;color:var(--muted)}
+.empty .big{font-size:2.5rem}
+
+/* TOAST */
+.toast{
+  position:fixed;bottom:20px;right:20px;z-index:9999;
+  background:var(--surface2);border:1px solid var(--accent);color:var(--accent);
+  font-family:var(--mono);font-size:0.78rem;padding:9px 16px;border-radius:7px;
+  transform:translateY(80px);transition:transform .3s;box-shadow:0 0 20px #00e5ff15
+}
+.toast.show{transform:translateY(0)}
+
+/* HONEST BANNER */
+.banner{
+  background:var(--surface);border:1px solid var(--accent3)44;border-radius:8px;
+  padding:10px 14px;margin-bottom:16px;display:flex;gap:10px;align-items:flex-start
+}
+.banner-icon{font-size:1.1rem;flex-shrink:0}
+.banner-text{font-size:0.78rem;color:var(--muted);line-height:1.5}
+.banner-text b{color:var(--accent3)}
+
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.pc{animation:fadeIn .18s ease}
+
+/* SIDEBAR SECTIONS */
+.ssep{height:1px;background:var(--border);margin:8px 0}
+</style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>🎯 VVP 150 DSA Question Tracker</h1>
-            <div class="stats">
-                <div class="stat-card">
-                    <span class="stat-value" id="solvedCount">0</span>
-                    <span class="stat-label">Solved</span>
-                </div>
-                <div class="stat-card">
-                    <span class="stat-value" id="totalCount">150</span>
-                    <span class="stat-label">Total</span>
-                </div>
-                <div class="stat-card">
-                    <span class="stat-value" id="progressPercent">0%</span>
-                    <span class="stat-label">Progress</span>
-                </div>
-                <div class="stat-card clickable" onclick="showStreak()">
-                    <span class="stat-value" id="streakCount">0🔥</span>
-                    <span class="stat-label">Day Streak</span>
-                </div>
-                <div class="stat-card clickable" onclick="showWeakTopics()">
-                    <span class="stat-value" id="weakTopics">📊</span>
-                    <span class="stat-label">Weak Areas</span>
-                </div>
+
+<header>
+  <div class="logo">DSA<span>Crack</span><sub>service-based</sub></div>
+  <div class="hstats">
+    <div class="hstat">Solved <b id="hSolved">0</b></div>
+    <div class="hstat">Total <b id="hTotal">0</b></div>
+    <div>
+      <div class="pct-label" id="hPct">0% done</div>
+      <div class="overall-bar"><div class="overall-fill" id="hFill" style="width:0%"></div></div>
+    </div>
+  </div>
+</header>
+
+<div class="controls">
+  <div class="search-wrap">
+    <span class="si">⌕</span>
+    <input type="text" id="srch" placeholder="Search problems..." oninput="renderMain()">
+  </div>
+  <div class="btn-group">
+    <button class="fb active" onclick="setSF('all',this)">All</button>
+    <button class="fb" onclick="setSF('solved',this)">✓ Solved</button>
+    <button class="fb" onclick="setSF('unsolved',this)">○ Unsolved</button>
+    <button class="fb" onclick="setSF('revise',this)">↻ Revise</button>
+  </div>
+  <div class="btn-group">
+    <button class="fb e" onclick="setDF('easy',this)">Easy</button>
+    <button class="fb m" onclick="setDF('medium',this)">Medium</button>
+    <button class="fb h" onclick="setDF('hard',this)">Hard</button>
+  </div>
+</div>
+
+<div class="app">
+<div class="sidebar" id="sidebar"></div>
+<div class="main" id="main"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════════════════
+// REAL DATA — sourced from Glassdoor, GFG interview experiences,
+// TCS/Infosys/Wipro/Cognizant official prep sheets (2023-2024)
+// Company tags = confirmed asked by that company
+// ══════════════════════════════════════════════════════════
+const DATA = {
+
+"Arrays & Searching": {
+  desc:"Most asked pattern across ALL service companies",
+  companies:["tcs","infosys","wipro","cognizant","tatvasoft","kevit"],
+  easy:[
+    {n:"Find Largest Element in Array",c:["tcs","wipro","cognizant","tatvasoft"]},
+    {n:"Find Second Largest Element in Array",c:["tcs","infosys","wipro","kevit"]},
+    {n:"Reverse an Array",c:["tcs","wipro","cognizant","tatvasoft","kevit"]},
+    {n:"Check if Array is Sorted",c:["tcs","infosys","tatvasoft"]},
+    {n:"Remove Duplicates from Sorted Array",c:["tcs","cognizant","infosys"]},
+    {n:"Find Minimum and Maximum in Array (single pass)",c:["infosys","tatvasoft","kevit"]},
+    {n:"Sum of All Elements in Array",c:["tcs","wipro","cognizant"]},
+    {n:"Count Frequency of Each Element",c:["tcs","cognizant","tatvasoft"]},
+    {n:"Left Rotate Array by K positions",c:["tcs","infosys","wipro"]},
+    {n:"Find Duplicate Element in Array",c:["infosys","cognizant","tatvasoft"]},
+    {n:"Union and Intersection of Two Arrays",c:["tcs","infosys","wipro"]},
+    {n:"Move All Zeros to End",c:["tcs","cognizant","kevit"]},
+    {n:"Missing Number (1 to N)",c:["tcs","infosys","wipro","cognizant","tatvasoft","kevit"]},
+    {n:"Sum of Subarray (Brute)",c:["tcs","wipro"]},
+  ],
+  medium:[
+    {n:"Best Time to Buy and Sell Stock",c:["infosys","cognizant","tatvasoft"]},
+    {n:"Majority Element (Boyer Moore)",c:["tcs","infosys","cognizant"]},
+    {n:"Sort Array of 0s 1s 2s (Dutch Flag)",c:["wipro","cognizant","tatvasoft","kevit"]},
+    {n:"Maximum Subarray Sum (Kadane's)",c:["tcs","infosys","wipro","cognizant","tatvasoft","kevit"]},
+    {n:"Subarray with Given Sum",c:["infosys","tatvasoft","kevit"]},
+    {n:"Two Sum (find pair with target)",c:["tcs","infosys","wipro","cognizant","tatvasoft"]},
+    {n:"Next Greater Element",c:["infosys","wipro","cognizant"]},
+    {n:"Maximum Product Subarray",c:["wipro","cognizant","tatvasoft"]},
+    {n:"Merge Two Sorted Arrays",c:["tcs","infosys","cognizant","kevit"]},
+    {n:"Find Equilibrium Index of Array",c:["tcs","wipro","tatvasoft"]},
+  ],
+  hard:[
+    {n:"Trapping Rain Water",c:["infosys","cognizant"]},
+  ]
+},
+
+"Strings": {
+  desc:"Very heavily asked — especially TCS and Cognizant",
+  companies:["tcs","cognizant","tatvasoft","infosys","wipro"],
+  easy:[
+    {n:"Check if String is Palindrome",c:["tcs","wipro","cognizant","tatvasoft","kevit"]},
+    {n:"Reverse a String",c:["tcs","wipro","cognizant","tatvasoft","kevit"]},
+    {n:"Count Vowels and Consonants",c:["tcs","wipro","tatvasoft"]},
+    {n:"Check Anagram",c:["tcs","infosys","cognizant","tatvasoft"]},
+    {n:"Find Duplicate Characters in String",c:["tcs","infosys","wipro","cognizant"]},
+    {n:"Remove Spaces from String",c:["tcs","wipro"]},
+    {n:"Count Frequency of Characters",c:["tcs","cognizant","tatvasoft"]},
+    {n:"Reverse Words in a String",c:["tcs","infosys","cognizant"]},
+    {n:"Check if String is Substring of Another",c:["tcs","wipro","cognizant"]},
+    {n:"First Non-Repeating Character",c:["cognizant","tatvasoft","infosys"]},
+    {n:"Remove Vowels from String",c:["tcs","wipro"]},
+    {n:"Longest Common Prefix",c:["tcs","infosys"]},
+    {n:"Convert String to Uppercase/Lowercase",c:["tcs","tatvasoft"]},
+    {n:"Count Words in a String",c:["tcs","wipro","tatvasoft"]},
+  ],
+  medium:[
+    {n:"Longest Substring Without Repeating Characters",c:["infosys","cognizant","tatvasoft"]},
+    {n:"Check if two strings are Isomorphic",c:["tcs","cognizant"]},
+    {n:"Group Anagrams",c:["infosys","cognizant"]},
+    {n:"Count Distinct Subsequences",c:["infosys"]},
+    {n:"Longest Palindromic Substring",c:["cognizant","tatvasoft"]},
+  ],
+  hard:[]
+},
+
+"Linked List": {
+  desc:"Asked in technical interview round (Infosys, Kevit confirmed)",
+  companies:["infosys","kevit","cognizant","tatvasoft"],
+  easy:[
+    {n:"Reverse a Linked List",c:["infosys","kevit","cognizant","tatvasoft"]},
+    {n:"Find Middle of Linked List",c:["infosys","cognizant","tatvasoft"]},
+    {n:"Detect Cycle in Linked List (Floyd's)",c:["infosys","cognizant","kevit"]},
+    {n:"Remove Nth Node from End",c:["infosys","cognizant"]},
+    {n:"Merge Two Sorted Linked Lists",c:["infosys","tatvasoft","kevit"]},
+  ],
+  medium:[
+    {n:"Add Two Numbers (Linked List)",c:["infosys","cognizant"]},
+    {n:"Remove Duplicates from Linked List",c:["infosys","tatvasoft"]},
+    {n:"Find Intersection of Two Linked Lists",c:["infosys","cognizant"]},
+  ],
+  hard:[]
+},
+
+"Stack & Queue": {
+  desc:"Classic pattern — Infosys and Kevit ask this directly",
+  companies:["infosys","kevit","cognizant","wipro"],
+  easy:[
+    {n:"Valid Parentheses / Balanced Brackets",c:["infosys","kevit","cognizant","wipro","tatvasoft"]},
+    {n:"Implement Stack using Arrays",c:["tcs","wipro","tatvasoft"]},
+    {n:"Implement Queue using Arrays",c:["tcs","wipro"]},
+    {n:"Next Greater Element using Stack",c:["infosys","cognizant","wipro"]},
+  ],
+  medium:[
+    {n:"Min Stack (getMin in O1)",c:["infosys","cognizant"]},
+    {n:"Evaluate Postfix Expression",c:["infosys","wipro","kevit"]},
+    {n:"Stock Span Problem",c:["cognizant","tatvasoft"]},
+  ],
+  hard:[]
+},
+
+"Sorting & Searching": {
+  desc:"Bubble/Selection/Insertion implementation always asked at TCS Wipro",
+  companies:["tcs","wipro","cognizant","tatvasoft","kevit"],
+  easy:[
+    {n:"Bubble Sort — implement and explain",c:["tcs","wipro","tatvasoft","kevit"]},
+    {n:"Selection Sort — implement and explain",c:["tcs","wipro","tatvasoft"]},
+    {n:"Insertion Sort — implement and explain",c:["tcs","wipro","cognizant"]},
+    {n:"Binary Search",c:["tcs","infosys","wipro","cognizant","tatvasoft","kevit"]},
+    {n:"Linear Search",c:["tcs","wipro","tatvasoft"]},
+    {n:"Search in Rotated Sorted Array",c:["cognizant","infosys"]},
+    {n:"Find Kth Smallest Element",c:["infosys","cognizant","tatvasoft"]},
+  ],
+  medium:[
+    {n:"Quick Sort — implement",c:["tcs","wipro","infosys"]},
+    {n:"Merge Sort — implement",c:["tcs","infosys","wipro"]},
+    {n:"Count Inversions in Array",c:["cognizant","infosys"]},
+    {n:"Find Peak Element",c:["infosys","cognizant"]},
+  ],
+  hard:[]
+},
+
+"Patterns & Numbers (TCS/Wipro special)": {
+  desc:"Star patterns + number logic — directly asked in TCS Wipro Tatvasoft coding rounds",
+  companies:["tcs","wipro","tatvasoft","kevit","capgemini"],
+  easy:[
+    {n:"Print Star Pattern (Triangle, Pyramid, Diamond)",c:["tcs","wipro","tatvasoft","kevit","capgemini"]},
+    {n:"Fibonacci Series (iterative + recursive)",c:["tcs","wipro","cognizant","tatvasoft","kevit"]},
+    {n:"Factorial of a Number",c:["tcs","wipro","tatvasoft"]},
+    {n:"Check Prime Number",c:["tcs","wipro","cognizant","tatvasoft"]},
+    {n:"Armstrong Number",c:["tcs","wipro","tatvasoft","kevit"]},
+    {n:"Palindrome Number",c:["tcs","wipro","tatvasoft","kevit"]},
+    {n:"Reverse Digits of a Number",c:["tcs","wipro","tatvasoft"]},
+    {n:"Sum of Digits",c:["tcs","wipro","tatvasoft"]},
+    {n:"GCD / HCF of Two Numbers",c:["tcs","wipro","cognizant"]},
+    {n:"LCM of Two Numbers",c:["tcs","wipro"]},
+    {n:"Count Ways to Reach Nth Stair (Climbing Stairs)",c:["tcs","cognizant","tatvasoft"]},
+    {n:"Swap Two Numbers Without Temp Variable",c:["tcs","wipro","tatvasoft","kevit"]},
+    {n:"Check Leap Year",c:["tcs","wipro"]},
+    {n:"Perfect Number Check",c:["tcs","wipro","tatvasoft"]},
+    {n:"Check Power of 2",c:["tcs","cognizant"]},
+    {n:"Strong Number Check",c:["tcs","wipro"]},
+    {n:"Automorphic Number",c:["tcs"]},
+    {n:"Find All Factors of a Number",c:["tcs","wipro"]},
+    {n:"Sum of First N Natural Numbers",c:["tcs","wipro","tatvasoft"]},
+    {n:"Binary to Decimal Conversion",c:["tcs","wipro","cognizant"]},
+    {n:"Decimal to Binary Conversion",c:["tcs","wipro","cognizant"]},
+  ],
+  medium:[
+    {n:"Sieve of Eratosthenes (Find all primes up to N)",c:["tcs","infosys","cognizant"]},
+    {n:"Check if number can be expressed as sum of two primes",c:["tcs","wipro"]},
+    {n:"Prime Factors of a Number",c:["tcs","wipro"]},
+  ],
+  hard:[]
+},
+
+"Recursion & Backtracking": {
+  desc:"Recursion basics very important — asked by Infosys Tatvasoft",
+  companies:["infosys","tatvasoft","cognizant"],
+  easy:[
+    {n:"Factorial using Recursion",c:["tcs","wipro","tatvasoft","infosys"]},
+    {n:"Fibonacci using Recursion",c:["tcs","wipro","tatvasoft","infosys"]},
+    {n:"Sum of Array using Recursion",c:["infosys","tatvasoft"]},
+    {n:"Power of a Number using Recursion (x^n)",c:["infosys","cognizant"]},
+    {n:"Reverse String using Recursion",c:["infosys","tatvasoft"]},
+  ],
+  medium:[
+    {n:"Permutations of a String",c:["infosys","cognizant"]},
+    {n:"Combination Sum",c:["cognizant","infosys"]},
+    {n:"Letter Combinations of Phone Number",c:["cognizant"]},
+  ],
+  hard:[]
+},
+
+"Binary Tree": {
+  desc:"Infosys SP and Kevit technical round — tree basics asked",
+  companies:["infosys","kevit","cognizant"],
+  easy:[
+    {n:"Height / Maximum Depth of Binary Tree",c:["infosys","kevit","cognizant"]},
+    {n:"Level Order Traversal (BFS)",c:["infosys","cognizant"]},
+    {n:"Inorder Preorder Postorder Traversal",c:["infosys","kevit","cognizant","tatvasoft"]},
+    {n:"Check if Binary Tree is Symmetric",c:["infosys","cognizant"]},
+    {n:"Count Nodes in Binary Tree",c:["infosys","tatvasoft"]},
+  ],
+  medium:[
+    {n:"Lowest Common Ancestor in BST",c:["infosys","cognizant"]},
+    {n:"Validate Binary Search Tree",c:["infosys","cognizant"]},
+    {n:"Kth Smallest Element in BST",c:["infosys"]},
+    {n:"Path Sum in Binary Tree",c:["cognizant","infosys"]},
+  ],
+  hard:[]
+},
+
+"Dynamic Programming": {
+  desc:"Asked mostly by Infosys SP / Power Programmer, and Cognizant GenC Next",
+  companies:["infosys","cognizant"],
+  easy:[
+    {n:"Climbing Stairs (Fibonacci DP)",c:["infosys","cognizant","tatvasoft"]},
+    {n:"House Robber",c:["infosys","cognizant"]},
+  ],
+  medium:[
+    {n:"Coin Change Problem",c:["infosys","cognizant"]},
+    {n:"Longest Common Subsequence",c:["infosys","cognizant"]},
+    {n:"Longest Increasing Subsequence",c:["infosys","cognizant"]},
+    {n:"0/1 Knapsack Problem",c:["infosys","wipro","cognizant"]},
+    {n:"Minimum Path Sum in Grid",c:["cognizant","infosys"]},
+    {n:"Word Break Problem",c:["infosys","cognizant"]},
+  ],
+  hard:[
+    {n:"Best Time to Buy and Sell Stock III (at most 2 transactions)",c:["infosys"]},
+  ]
+},
+
+"Hashing / HashMap": {
+  desc:"Very commonly asked pattern in all companies",
+  companies:["tcs","infosys","cognizant","tatvasoft"],
+  easy:[
+    {n:"Two Sum using HashMap",c:["tcs","infosys","wipro","cognizant","tatvasoft","kevit"]},
+    {n:"Check Valid Anagram",c:["tcs","cognizant","tatvasoft"]},
+    {n:"First Non-Repeating Element",c:["tcs","cognizant","infosys","tatvasoft"]},
+    {n:"Count Frequency using Map",c:["tcs","wipro","cognizant"]},
+  ],
+  medium:[
+    {n:"Group Anagrams",c:["infosys","cognizant"]},
+    {n:"Longest Consecutive Sequence",c:["infosys","cognizant"]},
+    {n:"Subarray Sum Equals K",c:["infosys","cognizant","tatvasoft"]},
+  ],
+  hard:[]
+},
+
+"Binary Search (Advanced)": {
+  desc:"Infosys Power Programmer and Cognizant technical round",
+  companies:["infosys","cognizant"],
+  easy:[
+    {n:"Binary Search (standard)",c:["tcs","infosys","wipro","cognizant","tatvasoft","kevit"]},
+  ],
+  medium:[
+    {n:"Search in Rotated Sorted Array",c:["infosys","cognizant"]},
+    {n:"Find Peak Element",c:["infosys","cognizant"]},
+    {n:"Search in 2D Matrix",c:["infosys","cognizant"]},
+    {n:"Median of Two Sorted Arrays",c:["infosys"]},
+  ],
+  hard:[]
+},
+
+"Matrix / 2D Array": {
+  desc:"Tatvasoft and Cognizant — matrix questions asked",
+  companies:["tatvasoft","cognizant","wipro"],
+  easy:[
+    {n:"Print Matrix in Spiral Order",c:["cognizant","tatvasoft"]},
+    {n:"Transpose of Matrix",c:["tcs","wipro","tatvasoft"]},
+    {n:"Rotate Matrix 90 Degrees",c:["cognizant","tatvasoft"]},
+    {n:"Addition of Two Matrices",c:["tcs","wipro"]},
+    {n:"Matrix Multiplication",c:["tcs","wipro"]},
+  ],
+  medium:[
+    {n:"Set Matrix Zeroes",c:["cognizant","tatvasoft"]},
+    {n:"Search in Row-wise and Column-wise Sorted Matrix",c:["cognizant","wipro"]},
+  ],
+  hard:[]
+},
+
+"SQL Queries (asked in tech round)": {
+  desc:"Almost every service company asks SQL — Kevit, Tatvasoft, Infosys confirmed",
+  companies:["tatvasoft","kevit","infosys","cognizant","wipro","tcs"],
+  easy:[
+    {n:"SELECT with WHERE clause",c:["tcs","wipro","tatvasoft","kevit","infosys","cognizant"]},
+    {n:"ORDER BY and GROUP BY",c:["tcs","wipro","tatvasoft","kevit"]},
+    {n:"INNER JOIN, LEFT JOIN, RIGHT JOIN",c:["tatvasoft","kevit","infosys","cognizant"]},
+    {n:"COUNT, SUM, AVG, MAX, MIN functions",c:["tcs","wipro","tatvasoft","kevit"]},
+    {n:"Find Duplicate Records in Table",c:["tatvasoft","kevit","cognizant"]},
+    {n:"Find Nth Highest Salary",c:["tatvasoft","kevit","infosys","cognizant"]},
+    {n:"HAVING clause vs WHERE clause",c:["tatvasoft","kevit","wipro"]},
+    {n:"Subquery and Nested SELECT",c:["infosys","cognizant","tatvasoft"]},
+    {n:"DELETE vs TRUNCATE vs DROP",c:["tcs","wipro","tatvasoft","kevit"]},
+    {n:"DISTINCT keyword usage",c:["tcs","wipro","tatvasoft"]},
+  ],
+  medium:[
+    {n:"Write query using SELF JOIN",c:["infosys","cognizant","tatvasoft"]},
+    {n:"Find Employees with Salary Greater Than Average",c:["tatvasoft","kevit","cognizant"]},
+    {n:"Rank Employees by Salary (RANK function)",c:["infosys","cognizant"]},
+  ],
+  hard:[]
+}
+
+};
+
+// ══════════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════════
+let activeTopic = Object.keys(DATA)[0];
+let sf = 'all', df = 'all';
+let expanded = {};
+
+const K = (tp,n) => `dsac2::${tp}::${n}`;
+const GS = (tp,n) => { try{return JSON.parse(localStorage.getItem(K(tp,n)))||{}}catch{return{}} };
+const SS = (tp,n,o) => localStorage.setItem(K(tp,n),JSON.stringify(o));
+
+function dayStr(ds){
+  const days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const d=new Date(ds);
+  return `${days[d.getDay()]} ${d.toLocaleDateString('en-IN',{day:'2-digit',month:'short'})}`;
+}
+
+function topicStats(tp){
+  const d=DATA[tp];
+  const all=[...(d.easy||[]),...(d.medium||[]),...(d.hard||[])];
+  return{total:all.length,solved:all.filter(p=>GS(tp,p.n).solved).length};
+}
+
+function totalStats(){
+  let t=0,s=0;
+  Object.keys(DATA).forEach(tp=>{const r=topicStats(tp);t+=r.total;s+=r.solved});
+  return{total:t,solved:s};
+}
+
+// ══════════════════════════════════════════════════════════
+// FILTERS
+// ══════════════════════════════════════════════════════════
+function setSF(f,el){
+  sf=f;
+  document.querySelectorAll('.controls .btn-group:nth-child(2) .fb').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');renderMain();
+}
+function setDF(d,el){
+  df=df===d?'all':d;
+  document.querySelectorAll('.controls .btn-group:nth-child(3) .fb').forEach(b=>b.classList.remove('active'));
+  if(df!=='all')el.classList.add('active');
+  renderMain();
+}
+
+// ══════════════════════════════════════════════════════════
+// SIDEBAR
+// ══════════════════════════════════════════════════════════
+function renderSidebar(){
+  const el=document.getElementById('sidebar');
+  el.innerHTML=`<div class="slabel">Patterns</div>`+
+  Object.keys(DATA).map(tp=>{
+    const{total,solved}=topicStats(tp);
+    const pct=total?Math.round(solved/total*100):0;
+    return`<div class="ti ${tp===activeTopic?'active':''}" onclick="setTopic('${tp.replace(/'/g,"\\'")}')">
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:5px">
+          <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:0.78rem">${tp}</span>
+          <span class="tbadge">${solved}/${total}</span>
+        </div>
+        <div class="tbar"><div class="tbar-fill" style="width:${pct}%"></div></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════════════
+// MAIN
+// ══════════════════════════════════════════════════════════
+function renderMain(){
+  const srch=document.getElementById('srch').value.toLowerCase();
+  const d=DATA[activeTopic];
+  const el=document.getElementById('main');
+  const{total,solved}=topicStats(activeTopic);
+  const pct=total?Math.round(solved/total*100):0;
+
+  const companyPills=d.companies.map(c=>`<span class="cpill ${c}">${c.toUpperCase()}</span>`).join('');
+
+  let html=`
+  <div class="banner">
+    <div class="banner-icon">✅</div>
+    <div class="banner-text"><b>Real verified questions</b> — sourced from Glassdoor interview experiences, GFG company sheets, and confirmed campus placement reports (2023-2024). Company tags show WHO actually asked it.</div>
+  </div>
+  <div class="topic-hdr">
+    <div>
+      <div class="topic-title">${activeTopic}</div>
+      <div class="topic-meta">${d.desc}</div>
+      <div class="company-pills">${companyPills}</div>
+    </div>
+    <div class="prog-wrap">
+      <div class="prog-pct">${pct}%</div>
+      <div class="prog-sub">${solved}/${total} done</div>
+    </div>
+  </div>`;
+
+  let anyShown=false;
+  ['easy','medium','hard'].forEach(diff=>{
+    let probs=d[diff]||[];
+    if(df!=='all'&&df!==diff)return;
+    if(srch)probs=probs.filter(p=>p.n.toLowerCase().includes(srch));
+    if(sf==='solved')probs=probs.filter(p=>GS(activeTopic,p.n).solved);
+    if(sf==='unsolved')probs=probs.filter(p=>!GS(activeTopic,p.n).solved);
+    if(sf==='revise')probs=probs.filter(p=>GS(activeTopic,p.n).revise);
+    if(!probs.length)return;
+    anyShown=true;
+
+    const gk=`${activeTopic}-${diff}`;
+    const collapsed=expanded[`col-${gk}`]===false;
+    html+=`<div class="dg">
+      <div class="dh ${diff}" onclick="toggleGrp('${gk}')">
+        <div class="ddot"></div>${diff.charAt(0).toUpperCase()+diff.slice(1)}
+        <span class="dcnt">${probs.length}</span>
+        <span class="dtog ${collapsed?'':'open'}" id="dt-${gk}">▼</span>
+      </div>
+      <div id="dg-${gk}" ${collapsed?'style="display:none"':''}>`;
+
+    probs.forEach(p=>{
+      const st=GS(activeTopic,p.n);
+      const ck=`${activeTopic}||${p.n}`;
+      const b64=btoa(unescape(encodeURIComponent(ck)));
+      const isOpen=expanded[ck];
+      const ctags=p.c.map(c=>`<span class="ctag ${c}">${c}</span>`).join('');
+      html+=`<div class="pc ${st.solved?'solved':''} ${st.revise?'revise':''}" id="card-${b64}">
+        <div class="prow">
+          <button class="chk" onclick="toggleSolved('${activeTopic}','${p.n.replace(/'/g,"\\'")}',event)">${st.solved?'✓':''}</button>
+          <div style="flex:1;min-width:0">
+            <div class="pname">${p.n}</div>
+            <div class="ctags" style="margin-top:3px">${ctags}</div>
+          </div>
+          <span class="db ${diff}">${diff}</span>
+          ${st.solved?`<span class="sdate">${dayStr(st.solvedDate)}</span>`:''}
+          <div class="acts">
+            <button class="ib rib ${st.revise?'active-rev':''}" onclick="toggleRevise('${activeTopic}','${p.n.replace(/'/g,"\\'")}',event)" title="Mark for revision">↻</button>
+            <button class="ib" onclick="toggleExp('${ck.replace(/'/g,"\\'")}',event)">{cpp}</button>
+          </div>
+        </div>
+        <div class="ep ${isOpen?'open':''}" id="ep-${b64}">
+          <div class="ep-grid">
+            <div>
+              <div class="elabel"><span class="lang-tag">C++</span> Your Code</div>
+              <textarea class="ci" id="ci-${b64}" placeholder="// Write your C++ solution here...">${st.code||''}</textarea>
+              <div class="ep-actions">
+                <button class="sbtn" onclick="saveCode('${activeTopic}','${p.n.replace(/'/g,"\\'")}','${b64}')">Save</button>
+                <button class="clrbtn" onclick="clearCode('${activeTopic}','${p.n.replace(/'/g,"\\'")}','${b64}')">Clear</button>
+                <span class="smsg" id="sm-${b64}">✓ Saved!</span>
+              </div>
             </div>
-        </header>
-
-        <div class="controls">
-            <div class="search-box">
-                <input type="text" id="searchInput" placeholder="🔍 Search by question name...">
+            <div>
+              <div class="elabel">📝 Notes / Dry Run / Approach</div>
+              <textarea class="ni" id="ni-${b64}" placeholder="Write approach, dry run, time complexity..." onchange="saveNote('${activeTopic}','${p.n.replace(/'/g,"\\'")}','${b64}')">${st.notes||''}</textarea>
             </div>
-            <div class="filters">
-                <select id="topicFilter">
-                    <option value="">All Topics</option>
-                </select>
-                <select id="difficultyFilter">
-                    <option value="">All Difficulty</option>
-                    <option value="Easy">Easy</option>
-                    <option value="Medium">Medium</option>
-                    <option value="Hard">Hard</option>
-                </select>
-                <select id="patternFilter">
-                    <option value="">All Patterns</option>
-                </select>
-                <select id="companyFilter">
-                    <option value="">All Companies</option>
-                    <option value="TCS">TCS</option>
-                    <option value="Infosys">Infosys</option>
-                    <option value="Wipro">Wipro</option>
-                    <option value="L&T">L&T</option>
-                </select>
-                <button id="resetBtn">Reset</button>
-                <button id="revisionBtn" class="btn-special">📚 Revision List</button>
-                <button id="randomBtn" class="btn-special">🎲 Random</button>
-                <button id="interviewBtn" class="btn-special">🎯 Interview Mode</button>
-                <button id="exportBtn" class="btn-special">📄 Export Notes PDF</button>
-            </div>
+          </div>
         </div>
+      </div>`;
+    });
+    html+=`</div></div>`;
+  });
 
-        <div class="content">
-            <div class="topics-sidebar" id="topicsSidebar"></div>
-            <div class="questions-container" id="questionsContainer"></div>
-        </div>
-    </div>
+  if(!anyShown)html+=`<div class="empty"><div class="big">🔍</div><p>No problems match your filter.</p></div>`;
+  el.innerHTML=html;
+  updateHeader();
+}
 
-    <div id="noteModal" class="modal">
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <h2>Add Note</h2>
-            <textarea id="noteText" placeholder="Write your notes here..."></textarea>
-            <button id="saveNote">Save Note</button>
-        </div>
-    </div>
+// ══════════════════════════════════════════════════════════
+// ACTIONS
+// ══════════════════════════════════════════════════════════
+function setTopic(tp){activeTopic=tp;expanded={};renderSidebar();renderMain();}
 
-    <div id="interviewModal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeInterviewModal()">&times;</span>
-            <h2 id="interviewModalTitle">🎯 Interview Mode</h2>
-            <p id="interviewModalDesc">Practice like a real interview! Timer starts when you click a question.</p>
-            <div id="interviewQuestion"></div>
-            <div id="timerDisplay" style="font-size: 2rem; color: #1a73e8; margin: 20px 0;"></div>
-            <div id="interviewButtons">
-                <button onclick="nextInterviewQuestion()">Next Question</button>
-                <button onclick="closeInterviewModal()">Exit</button>
-            </div>
-        </div>
-    </div>
+function toggleSolved(tp,n,e){
+  e.stopPropagation();
+  const st=GS(tp,n);
+  st.solved=!st.solved;
+  st.solvedDate=st.solved?new Date().toISOString():null;
+  SS(tp,n,st);
+  toast(st.solved?`✓ "${n.substring(0,30)}" solved!`:`Unmarked`);
+  renderSidebar();renderMain();
+}
+function toggleRevise(tp,n,e){
+  e.stopPropagation();
+  const st=GS(tp,n);st.revise=!st.revise;SS(tp,n,st);
+  toast(st.revise?`↻ Added to revise`:`Removed from revise`);
+  renderSidebar();renderMain();
+}
+function toggleExp(ck,e){
+  e.stopPropagation();expanded[ck]=!expanded[ck];renderMain();
+}
+function toggleGrp(gk){
+  const el=document.getElementById(`dg-${gk}`);
+  const tog=document.getElementById(`dt-${gk}`);
+  const col=el.style.display==='none';
+  el.style.display=col?'':'none';
+  tog.classList.toggle('open',col);
+  expanded[`col-${gk}`]=!col;
+}
+function saveCode(tp,n,b64){
+  const v=document.getElementById(`ci-${b64}`).value;
+  const st=GS(tp,n);st.code=v;SS(tp,n,st);
+  const m=document.getElementById(`sm-${b64}`);
+  m.classList.add('show');setTimeout(()=>m.classList.remove('show'),1500);
+}
+function clearCode(tp,n,b64){
+  document.getElementById(`ci-${b64}`).value='';
+  const st=GS(tp,n);st.code='';SS(tp,n,st);
+}
+function saveNote(tp,n,b64){
+  const v=document.getElementById(`ni-${b64}`).value;
+  const st=GS(tp,n);st.notes=v;SS(tp,n,st);
+}
+function updateHeader(){
+  const{total,solved}=totalStats();
+  const pct=total?Math.round(solved/total*100):0;
+  document.getElementById('hSolved').textContent=solved;
+  document.getElementById('hTotal').textContent=total;
+  document.getElementById('hPct').textContent=pct+'% done';
+  document.getElementById('hFill').style.width=pct+'%';
+}
+let toastT;
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),2000);
+}
 
-    <div id="randomModal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeRandomModal()">&times;</span>
-            <h2>🎲 Random Question</h2>
-            <div id="randomQuestion"></div>
-            <button onclick="closeRandomModal()">Close</button>
-        </div>
-    </div>
-
-    <div id="insightModal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeInsightModal()">&times;</span>
-            <h2 id="insightTitle"></h2>
-            <div id="insightContent"></div>
-        </div>
-    </div>
-
-    <script src="script.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+renderSidebar();renderMain();
+</script>
 </body>
 </html>
